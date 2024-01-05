@@ -1,0 +1,23 @@
+/* EventFilter.css */
+.filter-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  margin-bottom: 1rem;
+  border-radius: 5px;
+}
+
+.filter-date, .filter-text {
+  border: 2px solid #202020; /* Bordures blanches */
+  border-radius: 5px;
+  padding: 5px 10px;
+  color: rgb(39, 39, 39);
+  background-color: transparent;
+  font-family: 'Sora', sans-serif;
+}
+
+.filter-text::placeholder, .filter-date::placeholder {
+  color: #919191;
+}
