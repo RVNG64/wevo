@@ -1,25 +1,25 @@
 import React from 'react';
-import logo from './logo.svg';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { EventsProvider } from './EventContext';
 import './App.css';
+import MapWazaa from './Map/Map';
+import Navbar from './components/Navbar/Navbar';
+import EventDetails from './components/EventDetails/EventDetails';
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Router>
+      <EventsProvider>
+        <div className="App">
+          <Navbar />
+          <Routes>
+            <Route path="/" element={<MapWazaa />} />
+            <Route path="/event/:eventId" element={<EventDetails />} />
+            {/* Ajouter d'autres routes si nécessaire */}
+          </Routes>
+        </div>
+      </EventsProvider>
+    </Router>
   );
 }
 
