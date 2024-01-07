@@ -1,0 +1,32 @@
+.loading-animation {
+  position: fixed; /* Placé par rapport à la fenêtre du navigateur */
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 7em;
+  font-weight: bold;
+  color: #ffffff;
+  text-align: center;
+  z-index: 1050;
+  padding: 20px 40px;
+  border-radius: 15px;
+  background-size: 400% 400%;
+  transition: transform 2s ease-in-out, box-shadow 2s ease-in-out, background-position 8s ease;
+}
+
+/* Mesh gradient animé */
+.loading-animation {
+  background: linear-gradient(45deg, #000000, #b3b3b3, #ffffff);
+  background-size: 400% 400%;
+  animation: animateGradient 8s ease ;
+}
+
+/* Animation du mesh gradient */
+@keyframes animateGradient {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}

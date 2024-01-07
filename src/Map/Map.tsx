@@ -1,8 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
 import { POI, useEvents } from '../EventContext';
-import { v4 as uuidv4 } from 'uuid';
 // @ts-ignore
 import MarkerClusterGroup from 'react-leaflet-markercluster';
 import 'leaflet/dist/leaflet.css';
@@ -10,6 +8,7 @@ import 'react-leaflet-markercluster/dist/styles.min.css';
 import L from 'leaflet';
 import EventFilter from '../components/EventFilter/EventFilter';
 import EventDetails from '../components/EventDetails/EventDetails';
+import LoadingAnimation from '../components/WazaaLoading/WazaaLoading';
 import './Map.css';
 
 const mapMarker = new L.Icon({
@@ -20,26 +19,104 @@ const mapMarker = new L.Icon({
   iconSize: [25, 55],
 });
 
+type SearchEventsButtonProps = {
+  setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
+};
+
+const SearchEventsButton = ({ setIsLoading }: SearchEventsButtonProps) => {
+  const map = useMap();
+  const { fetchEventsInBounds, setEvents } = useEvents();
+  const [showSearchButton, setShowSearchButton] = useState(false);
+
+  useMapEvents({
+    moveend: () => setShowSearchButton(true),
+    zoomend: () => setShowSearchButton(true),
+  });
+
+  const handleSearch = () => {
+    setIsLoading(true);
+    const bounds = map.getBounds();
+    fetchEventsInBounds(bounds).then(newEvents => {
+      setEvents(newEvents);
+      setShowSearchButton(false);
+      setIsLoading(false);
+    });
+  };
+
+  return (
+    <>
+      {showSearchButton ? (
+        <button className="search-events-btn" onClick={handleSearch}>
+          WAZAA dans le coin ?
+        </button>
+      ) : null}
+    </>
+  );
+};
+
+const InitializeMapEvents = () => {
+  const { initializeEvents } = useEvents();
+  const map = useMap();
+  const isInitialized = useRef(false);
+
+  useEffect(() => {
+    if (!isInitialized.current) {
+      console.log("Initialisation des événements pour les limites actuelles de la carte");
+      initializeEvents(map.getBounds());
+      isInitialized.current = true;
+    }
+  }, [map, initializeEvents]);
+
+  return null; // Ce composant ne rend rien
+};
+
 const MapWazaa = () => {
-  const position: [number, number] = [43.4833, -1.4833]; // Coordonnées par défaut comme un tuple de type [number, number]
+  const position: [number, number] = [43.4833, -1.4833]; // Coordonnées par défaut
   const [searchStartDate, setSearchStartDate] = useState('');
   const [searchEndDate, setSearchEndDate] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPoi, setSelectedPoi] = useState<POI | null>(null);
   const [showDetails, setShowDetails] = useState(false);
-  const { events, setEvents } = useEvents();
-  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
+  const { events } = useEvents();
 
-  // Fonction pour gérer le clic sur le contenu de la popup Leaflet
-  const handlePopupContentClick = (poi: POI) => {
-    setSelectedPoi(poi);
-    // setShowDetails(true);
-    const uniqueId = poi.URI_ID_du_POI;
-    navigate(`/event/${uniqueId}`);
+  const handleMarkerClick = (poi: POI) => {
+    console.log(`Original ID: ${poi.URI_ID_du_POI}`);
+    const eventId = poi.URI_ID_du_POI.split('/').pop();
+    console.log(`Truncated ID for navigation: ${eventId}`);
+    window.history.pushState({}, '', `/event/${eventId}`); // Change l'URL sans naviguer
+    setSelectedPoi(poi); // Met à jour les détails de l'événement sélectionné
+    setShowDetails(true); // Ouvre la popup
+  };
+
+  // Met à jour les détails de l'événement en fonction de l'URL
+  useEffect(() => {
+    const eventId = window.location.pathname.split('/event/')[1];
+    if (eventId) {
+      console.log(`Event ID from URL: ${eventId}`);
+      const eventDetails = events.find(e => e.URI_ID_du_POI === eventId);
+      console.log(`Event details found:`, eventDetails);
+      setSelectedPoi(eventDetails ?? null);
+      setShowDetails(!!eventDetails);
+    }
+  }, [events]);
+
+  const handleCloseDetails = () => {
+    setShowDetails(false);
+    window.history.pushState({}, '', '/'); // Retour à l'URL de base
   };
 
   const renderDetailsPopup = () => {
     if (!selectedPoi) return null;
+
+      // Fonction pour partager l'événement
+      const shareEvent = () => {
+        const eventUrl = window.location.href;
+        navigator.clipboard.writeText(eventUrl)
+          .then(() => alert("Lien copié dans le presse-papiers !"))
+          .catch(err => console.error("Impossible de copier le lien", err));
+      };
+
     return (
       <div className={`details-popup ${showDetails ? 'show' : ''}`}>
         {/* Contenu de la popup de détail */}
@@ -48,6 +125,7 @@ const MapWazaa = () => {
         <p>{selectedPoi.Periodes_regroupees}</p>
         <p>{selectedPoi.Description}</p>
         {/* ... autres informations du POI ... */}
+        <button className="share-btn" onClick={shareEvent}>Partager</button>
         <button onClick={() => setShowDetails(false)}>Fermer</button>
       </div>
     );
@@ -67,26 +145,24 @@ const MapWazaa = () => {
     return `${year}-${month}-${day}`;
   };
 
-    // Convertit une date au format 'YYYY-MM-DD'
-    const formatDate = (date: string) => {
-      const d = new Date(date);
-      const year = d.getFullYear();
-      const month = String(d.getMonth() + 1).padStart(2, '0');
-      const day = String(d.getDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
-    };
+  // Convertit une date au format 'YYYY-MM-DD'
+  const formatDate = (date: string) => {
+    const d = new Date(date);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
 
-    const estDateDansPeriode = (periode: string, dateDebutRecherche: Date, dateFinRecherche: Date) => {
-      if (!periode) return false;
+  const estDateDansPeriode = (periode: string, dateDebutRecherche: Date, dateFinRecherche: Date) => {
+    if (!periode) return false;
 
-      const [dateDebutEvenement, dateFinEvenement] = periode.split('<->').map(formatDate);
-      const debutEvenement = new Date(dateDebutEvenement);
-      const finEvenement = dateFinEvenement ? new Date(dateFinEvenement) : debutEvenement;
+    const [dateDebutEvenement, dateFinEvenement] = periode.split('<->').map(formatDate);
+    const debutEvenement = new Date(dateDebutEvenement);
+    const finEvenement = dateFinEvenement ? new Date(dateFinEvenement) : debutEvenement;
 
-      return (debutEvenement <= dateFinRecherche && finEvenement >= dateDebutRecherche);
-    };
-
-  const dateToday = currentDate();
+    return (debutEvenement <= dateFinRecherche && finEvenement >= dateDebutRecherche);
+  };
 
   const poisFiltres = events.filter((poi: POI) => {
     const dateDebut = new Date(formatDate(searchStartDate || currentDate()));
@@ -97,29 +173,9 @@ const MapWazaa = () => {
             (searchQuery ? poi.Nom_du_POI.toLowerCase().includes(searchQuery.toLowerCase()) : true);
   });
 
-  const handleStartDateChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchStartDate(event.target.value);
-  };
-
-  const handleEndDateChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchEndDate(event.target.value);
-  };
-
-  // Ajout d'un identifiant unique à chaque POI
-  useEffect(() => {
-    fetch('/bddEvents.json')
-      .then((response) => response.json())
-      .then((data: POI[]) => {
-        const eventsWithId = data.map((event: POI) => ({
-          ...event,
-          eventId: uuidv4(), // Ajoute un identifiant unique à chaque événement
-        }));
-        setEvents(eventsWithId);
-      });
-  }, []);
-
   return (
     <>
+      <LoadingAnimation isLoading={isLoading} />
       <EventFilter
         setSearchStartDate={setSearchStartDate}
         setSearchEndDate={setSearchEndDate}
@@ -135,6 +191,8 @@ const MapWazaa = () => {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         />
+        <SearchEventsButton setIsLoading={setIsLoading} />
+        <InitializeMapEvents />
           {poisFiltres.map((poi, index) => {
             const latitude = parseFloat(poi.Latitude);
             const longitude = parseFloat(poi.Longitude);
@@ -147,7 +205,7 @@ const MapWazaa = () => {
                   icon={mapMarker}
                 >
                   <Popup className='leaflet-popup-content'>
-                    <div onClick={() => handlePopupContentClick(poi)}>
+                    <div onClick={() => handleMarkerClick (poi)}>
                       <h2>{poi.Nom_du_POI}</h2>
                       <p>{poi.Createur_de_la_donnee}</p>
                       <p>{poi.Periodes_regroupees}</p>
@@ -165,8 +223,36 @@ const MapWazaa = () => {
       {showDetails && selectedPoi && (
         <EventDetails/>
       )}
+      {showDetails && selectedPoi && (
+        <div className={`details-popup ${showDetails ? 'show' : ''}`}>
+          <h2>{selectedPoi.Nom_du_POI}</h2>
+          <p>{selectedPoi.Createur_de_la_donnee}</p>
+          <p>{selectedPoi.Periodes_regroupees}</p>
+          <p>{selectedPoi.Description}</p>
+          <p>{selectedPoi.Adresse_postale}, {selectedPoi.Code_postal_et_commune.split('#')[1]}</p>
+          {/* ... Autres détails de l'événement ... */}
+          <button onClick={handleCloseDetails}>Fermer</button>
+        </div>
+      )}
     </>
   );
 };
 
 export default MapWazaa;
+
+    // Fonction pour gérer le clic sur le contenu de la popup Leaflet
+    /* const handlePopupContentClick = (poi: POI) => {
+      setSelectedPoi(poi);
+      // setShowDetails(true);
+      const uniqueId = poi.URI_ID_du_POI;
+      navigate(`/event/${uniqueId}`);
+    }; */
+
+    // Affiche les détails de l'événement si l'URL contient un identifiant d'événement
+    /* useEffect(() => {
+      const eventId = location.pathname.split('/event/')[1];
+      if (eventId) {
+        const eventDetails = events.find(e => e.URI_ID_du_POI === eventId);
+        setSelectedEventDetails(eventDetails ?? null); // Utilisez 'null' si 'eventDetails' est 'undefined'
+      }
+    }, [location, events]); */

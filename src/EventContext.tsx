@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import L from 'leaflet';
 
 export interface POI {
   Nom_du_POI: string;
@@ -21,10 +22,13 @@ export interface POI {
 interface EventsContextProps {
   events: POI[];
   setEvents: React.Dispatch<React.SetStateAction<POI[]>>;
+  fetchEventsInBounds: (bounds: L.LatLngBounds) => Promise<POI[]>;
+  initializeEvents: (bounds: L.LatLngBounds) => Promise<void>;
 }
 
 interface EventsProviderProps {
   children: React.ReactNode;
+  initialBounds?: L.LatLngBounds;
 }
 
 const EventsContext = createContext<EventsContextProps | null>(null);
@@ -37,30 +41,60 @@ export const useEvents = () => {
   return context;
 };
 
-export const EventsProvider: React.FC<EventsProviderProps> = ({ children }) => {
+export const EventsProvider: React.FC<EventsProviderProps> = ({ children, initialBounds }) => {
   const [events, setEvents] = useState<POI[]>([]);
 
-  useEffect(() => {
-    const fetchEvents = async () => {
-      try {
-        const response = await fetch('/bddEvents.json');
-        const data = await response.json();
-        const modifiedData = data.map((event: POI) => ({
-          ...event,
-          URI_ID_du_POI: event.URI_ID_du_POI ? event.URI_ID_du_POI.split('/').pop() : ''
-        }));
-        setEvents(modifiedData);
-        console.log("Events Loaded: ", modifiedData);
-      } catch (error) {
-        console.error("Erreur lors du chargement des événements", error);
-      }
-    };
+  const fetchEvents = async () => {
+    try {
+      const response = await fetch('/bddEvents.json');
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error("Erreur lors du chargement des événements", error);
+      return [];
+    }
+  };
 
-    fetchEvents();
-  }, []);
+  const initializeEvents = async (bounds: L.LatLngBounds) => {
+    try {
+      const data = await fetchEvents();
+      const initialEvents = data.filter((event: POI) => {
+        const lat = parseFloat(event.Latitude);
+        const lng = parseFloat(event.Longitude);
+        if (isNaN(lat) || isNaN(lng)) {
+          console.error(`Invalid coordinates for event: ${event.Nom_du_POI}`);
+          return false;
+        }
+        const isInBounds = bounds.contains(L.latLng(lat, lng));
+        return isInBounds;
+      });
+      console.log(`Initial events: ${initialEvents.length}`);
+      setEvents(initialEvents);
+    } catch (error) {
+      console.error("Erreur lors du chargement des événements", error);
+    }
+  };
+
+  const fetchEventsInBounds = async (bounds: L.LatLngBounds) => {
+    const data = await fetchEvents();
+    const filteredEvents = data.filter((event: POI) => {
+      const lat = parseFloat(event.Latitude);
+      const lng = parseFloat(event.Longitude);
+      if (isNaN(lat) || isNaN(lng)) {
+        console.error(`Invalid coordinates for event: ${event.Nom_du_POI}`);
+        return false;
+      }
+      return bounds.contains(L.latLng(lat, lng));
+    });
+
+    console.log(`Bounds: ${bounds}`, 'Bounds details:', bounds.getNorthWest(), bounds.getSouthEast());
+    console.log(`Filtered events: ${filteredEvents.length}`);
+    setEvents(filteredEvents);
+    return filteredEvents;
+  };
 
   return (
-    <EventsContext.Provider value={{ events, setEvents }}>
+    <EventsContext.Provider value={{ events, setEvents, fetchEventsInBounds, initializeEvents }}>
       {children}
     </EventsContext.Provider>
   );
