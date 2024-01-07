@@ -5,11 +5,10 @@ import './EventDetails.css';
 
 const EventDetails = () => {
   const { eventId } = useParams<{ eventId: string }>();
-  console.log("EventId : " + eventId);
+  console.log(`Event ID in EventDetails: ${eventId}`);
   const { events } = useEvents();
-  console.log("Events : " + events);
   const eventData = events.find(e => e.URI_ID_du_POI.split('/').pop() === eventId);
-  console.log("EventData : " + eventData);
+  console.log(`Event data in EventDetails:`, eventData);
 
   if (!eventData) {
     return <div>Chargement des détails de l'événement...</div>;
