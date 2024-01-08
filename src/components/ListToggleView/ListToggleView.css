@@ -1,0 +1,28 @@
+.list-view-toggle {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1501;
+  background-color: white; /* Fond blanc */
+  color: #000000; /* Texte noir */
+  border: 2px solid #000000; /* Bordure noire fine */
+  padding: 10px 20px;
+  font-size: 16px;
+  font-weight: 500; /* Poids de la police semi-gras */
+  border-radius: 20px; /* Coins arrondis */
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Ombre légère pour la profondeur */
+  outline: none;
+}
+
+.list-view-toggle:hover {
+  background-color: #f0f0f0; /* Changement de couleur au survol */
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Ombre plus prononcée au survol */
+}
+
+.list-view-toggle:active {
+  background-color: #e0e0e0; /* Changement de couleur au clic */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); /* Ombre réduite au clic */
+}

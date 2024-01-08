@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+/* import React, { useState } from 'react';
 import './EventFilter.css';
 
 interface EventFilterProps {
@@ -58,3 +58,6 @@ const EventFilter: React.FC<EventFilterProps> = ({ setSearchStartDate, setSearch
 };
 
 export default EventFilter;
+*/
+
+export {};
