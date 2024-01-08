@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, MutableRefObject } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
 import { POI, useEvents } from '../EventContext';
 // @ts-ignore
@@ -6,9 +6,11 @@ import MarkerClusterGroup from 'react-leaflet-markercluster';
 import 'leaflet/dist/leaflet.css';
 import 'react-leaflet-markercluster/dist/styles.min.css';
 import L from 'leaflet';
-import EventFilter from '../components/EventFilter/EventFilter';
 import EventDetails from '../components/EventDetails/EventDetails';
 import LoadingAnimation from '../components/WazaaLoading/WazaaLoading';
+import ListViewToggle from '../components/ListToggleView/ListToggleView';
+import ListView from '../components/ListView/ListView';
+import MapContext from '../components/MapContext';
 import './Map.css';
 
 const mapMarker = new L.Icon({
@@ -70,6 +72,23 @@ const InitializeMapEvents = () => {
   return null; // Ce composant ne rend rien
 };
 
+interface UpdateMapRefProps {
+  mapRef: MutableRefObject<L.Map | null>;
+}
+
+const UpdateMapRef: React.FC<UpdateMapRefProps> = ({ mapRef }) => {
+  useMapEvents({
+    load: (mapEvent) => {
+      const mapInstance = mapEvent.target as L.Map;
+      mapRef.current = mapInstance;
+      console.log("mapRef après mise à jour:", mapRef);
+      console.log("Événement de chargement déclenché, mapInstance:", mapInstance);
+    },
+  });
+
+  return null;
+};
+
 const MapWazaa = () => {
   const position: [number, number] = [43.4833, -1.4833]; // Coordonnées par défaut
   const [searchStartDate, setSearchStartDate] = useState('');
@@ -78,7 +97,9 @@ const MapWazaa = () => {
   const [selectedPoi, setSelectedPoi] = useState<POI | null>(null);
   const [showDetails, setShowDetails] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isListViewVisible, setIsListViewVisible] = useState(false);
   const { events } = useEvents();
+  const mapRef = useRef(null);
 
   const handleMarkerClick = (poi: POI) => {
     console.log(`Original ID: ${poi.URI_ID_du_POI}`);
@@ -87,6 +108,10 @@ const MapWazaa = () => {
     window.history.pushState({}, '', `/event/${eventId}`); // Change l'URL sans naviguer
     setSelectedPoi(poi); // Met à jour les détails de l'événement sélectionné
     setShowDetails(true); // Ouvre la popup
+  };
+
+  const toggleListView = () => {
+    setIsListViewVisible(!isListViewVisible);
   };
 
   // Met à jour les détails de l'événement en fonction de l'URL
@@ -176,11 +201,8 @@ const MapWazaa = () => {
   return (
     <>
       <LoadingAnimation isLoading={isLoading} />
-      <EventFilter
-        setSearchStartDate={setSearchStartDate}
-        setSearchEndDate={setSearchEndDate}
-        setSearchQuery={setSearchQuery}
-      />
+      <ListViewToggle toggleListView={toggleListView} />
+      <ListView isVisible={isListViewVisible} events={poisFiltres}/>
 
       <MapContainer
         center={position}
@@ -192,6 +214,7 @@ const MapWazaa = () => {
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         />
         <SearchEventsButton setIsLoading={setIsLoading} />
+        <UpdateMapRef mapRef={mapRef} />
         <InitializeMapEvents />
           {poisFiltres.map((poi, index) => {
             const latitude = parseFloat(poi.Latitude);
