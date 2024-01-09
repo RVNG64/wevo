@@ -59,6 +59,12 @@ const EventFilter: React.FC<EventFilterProps> = ({ setSearchStartDate, setSearch
 };
 
 const Navbar = () => {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
+  };
+
   return (
     <nav className="navbar">
       <div className="navbar-brand">WAZAA</div>
@@ -73,8 +79,24 @@ const Navbar = () => {
       {/* Icône de profil */}
       <div className="navbar__rightcontainer">
         <button className="add-event-btn">Ajouter un événement</button>
-        <img src="/profile.svg" alt="Profile" className="navbar__profile" />
+        <div className="navbar__burger-container">
+          <button className="burger-menu-btn" onClick={toggleMenu}>
+            {/* Icône du burger menu */}
+            <span className="burger-menu-icon"></span>
+          </button>
+          <img src="/profile.svg" alt="Profile" className="navbar__profile" />
+        </div>
       </div>
+
+      {isMenuOpen && (
+        <div className="dropdown-menu">
+          <a href="/inscription">Inscription</a>
+          <a href="/connexion">Connexion</a>
+          <a href="/ajouter-evenement">Ajouter un événement</a>
+          <a href="/a-propos">À propos de Wazaa</a>
+        </div>
+      )}
+
     </nav>
   );
 };
