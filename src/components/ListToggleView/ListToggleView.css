@@ -3,7 +3,7 @@
   bottom: 20px;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 1501;
+  z-index: 1001;
   background-color: white; /* Fond blanc */
   color: #000000; /* Texte noir */
   border: 2px solid #000000; /* Bordure noire fine */

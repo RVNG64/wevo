@@ -4,6 +4,17 @@
   text-align: center;
 }
 
+body {
+  margin: 0;
+  font-family: 'Poppins', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Sora', sans-serif;
+}
+
 .App-logo {
   height: 40vmin;
   pointer-events: none;

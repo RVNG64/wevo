@@ -1,0 +1,68 @@
+.popup-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6); /* Fond sombre semi-transparent */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1001;
+  animation: fadeIn 0.5s; /* Animation d'apparition */
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.popup-container {
+  background-color: #f8f8f8; /* Fond clair */
+  padding: 30px;
+  border-radius: 15px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+  width: 80%;
+  max-width: 600px; /* Largeur maximale */
+  text-align: justify;
+  animation: slideUp 0.5s; /* Animation de glissement */
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.popup-container h2, .popup-container h3 {
+  color: #333;
+  font-family: 'Arial', sans-serif;
+  margin-bottom: 20px;
+}
+
+.popup-container p {
+  color: #666;
+  font-family: 'Arial', sans-serif;
+  font-size: 1rem;
+  line-height: 1.6;
+  margin-bottom: 15px;
+}
+
+.popup-container button {
+  background-color: #4CAF50; /* Bouton vert */
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-family: 'Arial', sans-serif;
+  transition: background-color 0.3s ease; /* Animation au survol */
+}
+
+.popup-container button:hover {
+  background-color: #367c39; /* Couleur plus foncée au survol */
+}
+
+.popup-arrival_button {
+  display: flex;
+  justify-content: center;
+}
